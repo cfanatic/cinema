@@ -288,12 +288,12 @@ func (v *Video) Duration() time.Duration {
 	return v.duration
 }
 
-// Get the set fps of the current video struct
+// FPS returns the set fps of the current video struct
 func (v *Video) FPS() int {
 	return v.fps
 }
 
-// Get the set bitrate of the current video struct
+// Bitrate returns the set bitrate of the current video struct
 func (v *Video) Bitrate() int {
 	return v.bitrate
 }
