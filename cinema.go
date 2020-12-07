@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -27,6 +28,7 @@ type Video struct {
 	duration       time.Duration
 	filters        []string
 	additionalArgs []string
+	concatInput     string
 }
 
 // Load gives you a Video that can be operated on. Load does not open the file
@@ -69,7 +71,7 @@ func Load(path string) (*Video, error) {
 		} `json:"streams"`
 		Format struct {
 			DurationSec json.Number `json:"duration"`
-			Bitrate json.Number `json:"bit_rate"`
+			Bitrate     json.Number `json:"bit_rate"`
 		} `json:"format"`
 	}
 	var desc description
@@ -180,6 +182,61 @@ func (v *Video) CommandLine(output string) []string {
 	cmdline = append(cmdline, "-vf", filters, "-strict", "-2")
 	cmdline = append(cmdline, output)
 	return cmdline
+}
+
+// TODO
+func (v *Video) Concatenate(clips []string, output string) error {
+	return v.ConcatenateWithStreams(clips, output, nil, nil)
+}
+
+// TODO
+func (v *Video) ConcatenateWithStreams(clips []string, output string, os io.Writer, es io.Writer) error {
+	v.saveConcatenateList(clips)
+	defer v.deleteConcatenateList()
+	line := v.CommandLineConcatenate(clips, output)
+	cmd := exec.Command(line[0], line[1:]...)
+	cmd.Stderr = es
+	cmd.Stdout = os
+
+	err := cmd.Run()
+	if err != nil {
+		return errors.New("cinema.Video.Concatenate: ffmpeg failed: " + err.Error())
+	}
+	return nil
+}
+
+// TODO
+func (v *Video) CommandLineConcatenate(clips []string, output string) []string {
+	cmdline := []string{
+		"ffmpeg",
+		"-y",
+		"-f", "concat",
+		"-i", v.concatInput,
+		"-c", "copy",
+	}
+	cmdline = append(cmdline, "-fflags", "+genpts", filepath.Join(filepath.Dir(clips[0]), output))
+	return cmdline
+}
+
+func (v *Video) saveConcatenateList(clips []string) error {
+	dir := filepath.Dir(clips[0])
+	v.concatInput = filepath.Join(dir, "concat.txt")
+	f, err := os.Create(v.concatInput)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	for _, clip := range clips {
+		fmt.Fprintf(f, "file '%s'\n", filepath.Base(clip))
+	}
+	return nil
+}
+
+func (v *Video) deleteConcatenateList() error {
+	if err := os.Remove(v.concatInput); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Mute mutes the video
