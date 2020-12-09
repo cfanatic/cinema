@@ -24,10 +24,18 @@ func main() {
 	video.SetSize(400, 400)                    // resize cropped 200x200 video to a 400x400
 	video.SetFPS(48)                           // set the output framerate to 48 frames per second
 	video.SetBitrate(200_000)                  // set the output bitrate of 200 kbps
-	video.Render("test_output.mov")            // note format conversion by file extension
+	video.Render("test_output1.mov")           // note format conversion by file extension
 
 	// you can also generate the command line instead of applying it directly
-	fmt.Println("FFMPEG Command", video.CommandLine("test_output.mov"))
+	fmt.Println("FFMPEG Command", video.CommandLine("test_output1.mov"))
+
+	// produce another test video and concatenate both clips
+	video.Trim(42*time.Second, 48*time.Second)
+	video.Render("test_output2.mov")
+	clip, err := cinema.NewClip([]string{"test_output1.mov", "test_output2.mov"}) // absolute or relative paths can be used
+	check(err)
+	clip.Concatenate("concat.mov")
+	fmt.Println("FFMPEG Command", clip.CommandLine("concat.mov"))
 }
 
 func downloadTestVideo(to string) {
