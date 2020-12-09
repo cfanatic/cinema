@@ -30,7 +30,9 @@ type Video struct {
 	additionalArgs []string
 }
 
-// TODO
+// Clip contains the absolute or relative path to video files that shall be concatenated.
+// Call Clip.NewClip() to initialize the video files and run Clip.Concatenate() to produce
+// a single video file.
 type Clip struct {
 	videosPath      []string
 	concatListCache string
@@ -305,7 +307,8 @@ func (v *Video) Bitrate() int {
 	return v.bitrate
 }
 
-// TODO
+// NewClip gives you a Clip that can be used to concatenate video files.
+// Provide a list of absolute or relative paths to these videos by videoPath.
 func NewClip(videoPath []string) (*Clip, error) {
 	var clip Clip
 	if _, err := exec.LookPath("ffprobe"); err != nil {
@@ -326,12 +329,15 @@ func NewClip(videoPath []string) (*Clip, error) {
 	return &clip, nil
 }
 
-// TODO
+// Concatenate produces a single video clip based on Clip.videosPath and save it as output.
+// This method won't return anything on stdout / stderr.
+// If you need to read ffmpeg's outputs, use RenderWithStreams.
 func (c *Clip) Concatenate(output string) error {
 	return c.ConcatenateWithStreams(output, nil, nil)
 }
 
-// TODO
+// ConcatenateWithStreams produces a single video clip based on Clip.videosPath and save it as output.
+// By specifying an output stream and an error stream, you can read ffmpeg's stdout and stderr.
 func (c *Clip) ConcatenateWithStreams(output string, os io.Writer, es io.Writer) error {
 	c.saveConcatenateList()
 	defer c.deleteConcatenateList()
@@ -347,7 +353,7 @@ func (c *Clip) ConcatenateWithStreams(output string, os io.Writer, es io.Writer)
 	return nil
 }
 
-// TODO
+// CommandLine returns the command line instruction that will be used to concatenate the video files.
 func (c *Clip) CommandLine(output string) []string {
 	cmdline := []string{
 		"ffmpeg",
