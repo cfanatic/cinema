@@ -32,7 +32,7 @@ type Video struct {
 
 // TODO
 type Clip struct {
-	videosPath       []string
+	videosPath      []string
 	concatListCache string
 }
 
@@ -308,6 +308,19 @@ func (v *Video) Bitrate() int {
 // TODO
 func NewClip(videoPath []string) (*Clip, error) {
 	var clip Clip
+	if _, err := exec.LookPath("ffprobe"); err != nil {
+		return nil, errors.New("cinema.Load: ffprobe was not found in your PATH " +
+			"environment variable, make sure to install ffmpeg " +
+			"(https://ffmpeg.org/) and add ffmpeg, ffplay and ffprobe to your " +
+			"PATH")
+	}
+
+	for _, path := range videoPath {
+		if _, err := os.Stat(path); err != nil {
+			return nil, errors.New("cinema.Load: unable to load file: " + err.Error())
+		}
+	}
+
 	dir := filepath.Dir(videoPath[0])
 	clip = Clip{videosPath: videoPath, concatListCache: filepath.Join(dir, "concat.txt")}
 	return &clip, nil
