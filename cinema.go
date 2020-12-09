@@ -32,8 +32,8 @@ type Video struct {
 
 // TODO
 type Clip struct {
-	fileListPath     []string
-	concatInputCache string
+	videosPath       []string
+	concatListCache string
 }
 
 // Load gives you a Video that can be operated on. Load does not open the file
@@ -306,15 +306,23 @@ func (v *Video) Bitrate() int {
 }
 
 // TODO
-func (c *Clip) Concatenate(clip []string, output string) error {
-	return c.ConcatenateWithStreams(clip, output, nil, nil)
+func NewClip(videoPath []string) (*Clip, error) {
+	var clip Clip
+	dir := filepath.Dir(videoPath[0])
+	clip = Clip{videosPath: videoPath, concatListCache: filepath.Join(dir, "concat.txt")}
+	return &clip, nil
 }
 
 // TODO
-func (c *Clip) ConcatenateWithStreams(clip []string, output string, os io.Writer, es io.Writer) error {
-	c.saveConcatenateList(clip)
+func (c *Clip) Concatenate(output string) error {
+	return c.ConcatenateWithStreams(output, nil, nil)
+}
+
+// TODO
+func (c *Clip) ConcatenateWithStreams(output string, os io.Writer, es io.Writer) error {
+	c.saveConcatenateList()
 	defer c.deleteConcatenateList()
-	line := c.CommandLineConcatenate(clip, output)
+	line := c.CommandLine(output)
 	cmd := exec.Command(line[0], line[1:]...)
 	cmd.Stderr = es
 	cmd.Stdout = os
@@ -327,34 +335,32 @@ func (c *Clip) ConcatenateWithStreams(clip []string, output string, os io.Writer
 }
 
 // TODO
-func (c *Clip) CommandLineConcatenate(clip []string, output string) []string {
+func (c *Clip) CommandLine(output string) []string {
 	cmdline := []string{
 		"ffmpeg",
 		"-y",
 		"-f", "concat",
-		"-i", c.concatInputCache,
+		"-i", c.concatListCache,
 		"-c", "copy",
 	}
-	cmdline = append(cmdline, "-fflags", "+genpts", filepath.Join(filepath.Dir(clip[0]), output))
+	cmdline = append(cmdline, "-fflags", "+genpts", filepath.Join(filepath.Dir(c.videosPath[0]), output))
 	return cmdline
 }
 
-func (c *Clip) saveConcatenateList(clip []string) error {
-	dir := filepath.Dir(clip[0])
-	c.concatInputCache = filepath.Join(dir, "concat.txt")
-	f, err := os.Create(c.concatInputCache)
+func (c *Clip) saveConcatenateList() error {
+	f, err := os.Create(c.concatListCache)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	for _, clip := range clip {
-		fmt.Fprintf(f, "file '%s'\n", filepath.Base(clip))
+	for _, video := range c.videosPath {
+		fmt.Fprintf(f, "file '%s'\n", filepath.Base(video))
 	}
 	return nil
 }
 
 func (c *Clip) deleteConcatenateList() error {
-	if err := os.Remove(c.concatInputCache); err != nil {
+	if err := os.Remove(c.concatListCache); err != nil {
 		return err
 	}
 	return nil
