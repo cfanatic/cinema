@@ -2,7 +2,7 @@
 
 ![alt text](https://i.imgur.com/uYRpL29.jpg "github.com/jtguibas/cinema")
 
-## Overview [![GoDoc](https://godoc.org/github.com/jtguibas/cinema?status.svg)](https://godoc.org/github.com/jtguibas/cinema)
+## Overview [![GoDoc](https://godoc.org/github.com/cfanatic/cinema?status.svg)](https://godoc.org/github.com/cfanatic/cinema)
 
 cinema is a simple video editing library based on ffmpeg. It supports trimming, resizing, cropping, concatenation and more. Use it to create videos directly or let it generate command lines that use ffmpeg for you.
 
